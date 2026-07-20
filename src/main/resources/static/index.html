@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Geo Distance Calculator</title>
+    <style>
+        :root {
+            --ink: #1c1c1e;
+            --muted: #6b6b70;
+            --rule: #e3e3e6;
+            --surface: #f6f6f7;
+            --accent: #0a6b52;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            color: var(--ink);
+            max-width: 46rem;
+            margin: 0 auto;
+            padding: 3.5rem 1.5rem 5rem;
+            line-height: 1.65;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            margin: 0 0 0.4rem;
+            letter-spacing: -0.02em;
+        }
+
+        .tagline {
+            color: var(--muted);
+            margin: 0 0 2.5rem;
+        }
+
+        h2 {
+            font-size: 1.05rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 0.5rem;
+            margin: 2.75rem 0 1.25rem;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.9em;
+            background: var(--surface);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        pre {
+            background: var(--surface);
+            padding: 1rem 1.1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        pre code { background: none; padding: 0; }
+
+        .endpoint {
+            margin: 0 0 1.75rem;
+        }
+
+        .endpoint p { margin: 0.35rem 0 0; color: var(--muted); }
+
+        .method {
+            display: inline-block;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: #fff;
+            background: var(--accent);
+            padding: 0.1rem 0.45rem;
+            border-radius: 3px;
+            margin-right: 0.4rem;
+            vertical-align: 1px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.92rem;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 0.5rem 0.75rem 0.5rem 0;
+            border-bottom: 1px solid var(--rule);
+            vertical-align: top;
+        }
+
+        th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+        }
+
+        td:first-child { white-space: nowrap; width: 4rem; }
+
+        footer {
+            margin-top: 3.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--rule);
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Geo Distance Calculator</h1>
+<p class="tagline">
+    Straight-line distance between two UK postal codes.
+    All <code>/api/**</code> endpoints require HTTP Basic authentication.
+</p>
+
+<h2>Endpoints</h2>
+
+<div class="endpoint">
+    <span class="method">GET</span><code>/api/v1/distance?from={postcode}&amp;to={postcode}</code>
+    <p>Distance in kilometres between two postcodes. Case and spaces are ignored.</p>
+</div>
+
+<div class="endpoint">
+    <span class="method">GET</span><code>/api/v1/postcodes/{code}</code>
+    <p>Coordinates for a single postcode.</p>
+</div>
+
+<div class="endpoint">
+    <span class="method">PUT</span><code>/api/v1/postcodes/{code}</code>
+    <p>
+        Create or update a postcode's coordinates.
+        Body: <code>{"latitude": 57.2, "longitude": -2.2}</code>
+    </p>
+</div>
+
+<h2>Example</h2>
+
+<pre><code>curl -u wcc:$APP_PASSWORD \
+  "http://localhost:8080/api/v1/distance?from=AB10%201XG&amp;to=BB1%204HY"</code></pre>
+
+<pre><code>{
+  "start": { "postcode": "AB101XG", "latitude": 57.14414, "longitude": -2.114871 },
+  "end":   { "postcode": "BB14HY",  "latitude": 53.7676,  "longitude": -2.417055 },
+  "distance": 375.936,
+  "unit": "km"
+}</code></pre>
+
+<h2>Responses</h2>
+
+<table>
+    <thead>
+    <tr><th>Code</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+    <tr><td>200</td><td>Success</td></tr>
+    <tr><td>400</td><td>Missing parameter, or a coordinate outside the valid range (±90 / ±180)</td></tr>
+    <tr><td>401</td><td>Missing or incorrect credentials</td></tr>
+    <tr><td>404</td><td>Postcode not found in the dataset</td></tr>
+    <tr><td>422</td><td>Coordinates are valid but fall outside the UK service area</td></tr>
+    </tbody>
+</table>
+
+<footer>
+    Set <code>APP_PASSWORD</code> before starting the service; the username is <code>wcc</code>.
+    See the project README for setup, configuration, and how to load the full postcode dataset.
+</footer>
+
+</body>
+</html>
