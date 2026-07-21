@@ -130,84 +130,17 @@ Every failure returns the same JSON shape, so clients can parse errors uniformly
 }
 ```
 
-| Status | When                                                                        |
-|--------|-----------------------------------------------------------------------------|
+| Status | When                                                                                |
+|--------|-------------------------------------------------------------------------------------|
 | `400`  | Missing `from`/`to` parameter, or a coordinate outside the valid range (±90 / ±180) |
-| `401`  | Missing or incorrect credentials                                             |
-| `404`  | The postcode is not in the dataset                                           |
-| `422`  | Coordinates are valid but fall outside the UK service area                   |
+| `401`  | Missing or incorrect credentials                                                    |
+| `404`  | The postcode is not in the dataset                                                  |
+| `422`  | Coordinates are valid but fall outside the UK service area                          |
 
 The `400` / `422` split is deliberate. `400` means the request is malformed — a latitude of `999`
 is not a coordinate at all. `422` means the request is well-formed but semantically rejected by a
 business rule — `45.0, 2.0` is a perfectly valid coordinate, but it is in France.
 
 ---
-
-## Using the full postcode dataset
-
-The bundled sample keeps the repository small. To run against the complete dataset, download
-[`ukpostcodes.zip`](https://data.freemaptools.com/download/full-uk-postcodes/ukpostcodes.zip)
-(20 MB zipped, ~64 MB unzipped, ~1.8 M rows, header `id,postcode,latitude,longitude`), unzip it,
-and point the application at it:
-
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.arguments="--app.postcodes.csv=file:/path/to/ukpostcodes.csv"
-```
-
-No code change or rebuild is needed — the location is a configuration property, and the
-`classpath:` and `file:` prefixes are handled uniformly.
-
-The loader has been tested against the full file. Around **11,800 rows have empty coordinate
-fields** (real postcodes with no published centroid, mostly large-user and PO-box codes); these
-are skipped and reported in the import summary rather than aborting the import.
-
----
-
-## Architecture
-
-```
-controller  →  thin HTTP adapters; no business logic
-service     →  use cases: lookup, distance calculation, coordinate updates
-repository  →  Spring Data JPA interfaces
-domain      →  JPA entities
-dto         →  the public JSON contract (records), decoupled from entities
-exception   →  domain exceptions plus one global handler
-config      →  security and CSV import
-```
-
-## Request logging
-
-Each successful distance request emits a structured log line:
-
-```
-distance_request from=AB101XG to=BB14HY distance_km=375.936
-```
-
-The fixed event name and `key=value` pairs are machine-parseable, so these lines can be ingested by
-a log aggregator and queried directly — for example, to report the most frequently requested
-postcodes. Normalized codes are logged so that variations in user input aggregate correctly.
-
-A database table would also satisfy this requirement and make SQL aggregation trivial, at the cost
-of adding a write to the request path and coupling request logging to the primary datastore.
-
----
-
-## Tests
-
-```bash
-./mvnw test
-```
-
-| Test | Covers |
-|------|--------|
-| `PostcodeNormalizerTest` | Canonical postcode form, including null input |
-| `HaversineDistanceCalculatorTest` | Zero distance, a known real-world distance verified against an independent source, symmetry, and a prime-meridian crossing (the UK spans 0° longitude) |
-| `PostcodeServiceTest` | Lookup, normalization before lookup, not-found, the upsert's update and create branches, and UK bounds rejection |
-| `DistanceServiceTest` | Response assembly and rounding, correct coordinate ordering passed to the calculator, and exception propagation |
-| `DistanceApiIntegrationTest` | Full stack through MockMvc: the JSON contract, `400` / `401` / `404` / `422` behaviour, and an update round-trip |
-
-Unit tests use Mockito to isolate each class, so a failure identifies exactly which class is at
-fault. The integration tests run the real Spring context, security filter chain and H2 database to
-verify the pieces actually fit together.
 
 

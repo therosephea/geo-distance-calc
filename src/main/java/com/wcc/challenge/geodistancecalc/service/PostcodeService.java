@@ -4,6 +4,8 @@ import com.wcc.challenge.geodistancecalc.domain.Postcode;
 import com.wcc.challenge.geodistancecalc.exception.PostcodeNotFoundException;
 import com.wcc.challenge.geodistancecalc.exception.PostcodeOutOfBoundsException;
 import com.wcc.challenge.geodistancecalc.repository.PostcodeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,5 +50,10 @@ public class PostcodeService {
         if (!inBounds) {
             throw new PostcodeOutOfBoundsException(latitude, longitude);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Postcode> getAll(Pageable pageable) {
+        return postcodeRepository.findAll(pageable);
     }
 }

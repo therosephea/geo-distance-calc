@@ -4,6 +4,9 @@ import com.wcc.challenge.geodistancecalc.dto.LocationDTO;
 import com.wcc.challenge.geodistancecalc.dto.UpdatePostcodeRequest;
 import com.wcc.challenge.geodistancecalc.service.PostcodeService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +17,11 @@ public class PostcodeController {
 
     public PostcodeController(PostcodeService postcodeService) {
         this.postcodeService = postcodeService;
+    }
+
+    @GetMapping
+    public Page<LocationDTO> list(@PageableDefault(size = 50, sort = "code") Pageable pageable) {
+        return postcodeService.getAll(pageable).map(LocationDTO::from);
     }
 
     @GetMapping("/{code}")
