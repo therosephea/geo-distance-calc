@@ -44,6 +44,15 @@ database installation or other setup.
 
 ### Try it
 
+In your browser, open link below:
+
+**http://localhost:8080/swagger-ui.html** 
+
+Click **Authorize**, enter the username `wcc` and the password you have set in your run configuration, then expand any endpoint and click **Try it out** →
+**Execute**.
+
+Or from the command line:
+
 ```bash
 curl -u wcc:YOUR_DESIRED_PASSWORD "http://localhost:8080/api/v1/distance?from=AB10%201XG&to=BB1%204HY"
 ```
@@ -68,12 +77,6 @@ All endpoints require HTTP Basic authentication.
 | `APP_USER`     | `wcc`   | A username is not a secret, so it has a default. |
 | `APP_PASSWORD` | *none*  | No default; a random one is generated if unset (see below) |
 
-APP_PASSWORD has no default. If not set, Spring generates a random password
-and prints it in console. You may use the generated security password provided,
-but it changes on every restart. The username remains as "wcc".
-
-In production these values would come from a secrets manager (Vault, AWS Secrets Manager) rather
-than the environment directly.
 
 ---
 
@@ -85,8 +88,7 @@ than the environment directly.
 GET /api/v1/distance?from={postcode}&to={postcode}
 ```
 
-Postcodes are case-insensitive and spaces are ignored — `sw1a1aa`, `SW1A 1AA` and `Sw1a 1Aa` all
-resolve to the same record.
+Postcodes are case-insensitive and spaces are ignored.
 
 ```bash
 curl -u wcc:YOUR_DESIRED_PASSWORD "http://localhost:8080/api/v1/distance?from=AB10%201XG&to=BB1%204HY"
@@ -113,34 +115,3 @@ curl -u wcc:YOUR_DESIRED_PASSWORD -X PUT "http://localhost:8080/api/v1/postcodes
      -H "Content-Type: application/json" \
      -d '{"latitude": 57.2, "longitude": -2.2}'
 ```
-
-`PUT` is an upsert: it updates the postcode if it exists and creates it otherwise. It is
-idempotent, so repeating the same request leaves the same result.
-
-### Errors
-
-Every failure returns the same JSON shape, so clients can parse errors uniformly:
-
-```json
-{
-  "status": 404,
-  "error": "Not Found",
-  "message": "Unknown UK postcode: 'XY99 9ZZ'",
-  "timestamp": "2026-07-19T14:47:38.647269400Z"
-}
-```
-
-| Status | When                                                                                |
-|--------|-------------------------------------------------------------------------------------|
-| `400`  | Missing `from`/`to` parameter, or a coordinate outside the valid range (±90 / ±180) |
-| `401`  | Missing or incorrect credentials                                                    |
-| `404`  | The postcode is not in the dataset                                                  |
-| `422`  | Coordinates are valid but fall outside the UK service area                          |
-
-The `400` / `422` split is deliberate. `400` means the request is malformed — a latitude of `999`
-is not a coordinate at all. `422` means the request is well-formed but semantically rejected by a
-business rule — `45.0, 2.0` is a perfectly valid coordinate, but it is in France.
-
----
-
-
